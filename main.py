@@ -1,0 +1,159 @@
+# =============================================================================
+# main.py
+#
+# Main entry point for the Inventory RL Project
+# Trains both Q-Learning and SARSA agents and compares their results
+#
+# Run with: python main.py
+# =============================================================================
+
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+
+import config
+from environment.inventory_env import InventoryEnvironment
+from agents.q_learning import QLearningAgent
+from agents.sarsa import SARSAAgent
+
+
+def ensure_directories():
+    """Create output directories if they don't exist."""
+    os.makedirs(config.RESULTS_DIR, exist_ok=True)
+    os.makedirs(config.PLOTS_DIR, exist_ok=True)
+
+
+def plot_learning_curves(ql_rewards, sarsa_rewards):
+    """
+    Plot and save learning curves for both agents side by side.
+    
+    Parameters:
+    -----------
+    ql_rewards    : list of total rewards per episode (Q-Learning)
+    sarsa_rewards : list of total rewards per episode (SARSA)
+    """
+    # Smooth rewards using a rolling average for readability
+    window = 100
+    ql_smooth = np.convolve(ql_rewards, np.ones(window)/window, mode='valid')
+    sarsa_smooth = np.convolve(sarsa_rewards, np.ones(window)/window, mode='valid')
+
+    plt.figure(figsize=(12, 5))
+
+    plt.subplot(1, 2, 1)
+    plt.plot(ql_rewards, alpha=0.3, color='blue', label='Raw')
+    plt.plot(ql_smooth, color='blue', linewidth=2, label=f'Smoothed ({window}-ep avg)')
+    plt.title('Q-Learning: Reward per Episode')
+    plt.xlabel('Episode')
+    plt.ylabel('Total Reward')
+    plt.legend()
+
+    plt.subplot(1, 2, 2)
+    plt.plot(sarsa_rewards, alpha=0.3, color='orange', label='Raw')
+    plt.plot(sarsa_smooth, color='orange', linewidth=2, label=f'Smoothed ({window}-ep avg)')
+    plt.title('SARSA: Reward per Episode')
+    plt.xlabel('Episode')
+    plt.ylabel('Total Reward')
+    plt.legend()
+
+    plt.tight_layout()
+    path = os.path.join(config.PLOTS_DIR, 'learning_curves.png')
+    plt.savefig(path, dpi=150)
+    plt.show()
+    print(f"[Saved] Learning curves → {path}")
+
+
+def plot_comparison(ql_rewards, sarsa_rewards):
+    """
+    Plot both agents' smoothed learning curves on the same graph.
+    """
+    window = 100
+    ql_smooth = np.convolve(ql_rewards, np.ones(window)/window, mode='valid')
+    sarsa_smooth = np.convolve(sarsa_rewards, np.ones(window)/window, mode='valid')
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(ql_smooth, color='blue', linewidth=2, label='Q-Learning')
+    plt.plot(sarsa_smooth, color='orange', linewidth=2, label='SARSA')
+    plt.title('Q-Learning vs SARSA: Learning Curve Comparison')
+    plt.xlabel('Episode')
+    plt.ylabel(f'Avg Total Reward ({window}-episode window)')
+    plt.legend()
+    plt.tight_layout()
+
+    path = os.path.join(config.PLOTS_DIR, 'comparison.png')
+    plt.savefig(path, dpi=150)
+    plt.show()
+    print(f"[Saved] Comparison plot → {path}")
+
+
+def print_results_table(ql_eval, sarsa_eval):
+    """
+    Print a formatted comparison table of evaluation results.
+    
+    Parameters:
+    -----------
+    ql_eval    : dict with avg_reward, stockout_rate, overstock_rate
+    sarsa_eval : dict with avg_reward, stockout_rate, overstock_rate
+    """
+    print("\n" + "=" * 55)
+    print(f"{'EVALUATION RESULTS':^55}")
+    print("=" * 55)
+    print(f"{'Metric':<30} {'Q-Learning':>10} {'SARSA':>10}")
+    print("-" * 55)
+    print(f"{'Avg Reward per Episode':<30} {ql_eval['avg_reward']:>10.2f} "
+          f"{sarsa_eval['avg_reward']:>10.2f}")
+    print(f"{'Stockout Rate (%)':<30} {ql_eval['stockout_rate']:>10.2f} "
+          f"{sarsa_eval['stockout_rate']:>10.2f}")
+    print(f"{'Overstock Rate (%)':<30} {ql_eval['overstock_rate']:>10.2f} "
+          f"{sarsa_eval['overstock_rate']:>10.2f}")
+    print("=" * 55)
+
+
+if __name__ == '__main__':
+    ensure_directories()
+
+    print("\n" + "=" * 55)
+    print("  Inventory Restocking RL - Training & Evaluation")
+    print("=" * 55)
+
+    # ------------------------------------------------------------------
+    # Initialise environment
+    # ------------------------------------------------------------------
+    env = InventoryEnvironment()
+    space_info = env.get_state_space_info()
+    n_states = space_info['n_states']
+    n_actions = space_info['n_actions']
+
+    # ------------------------------------------------------------------
+    # Train Q-Learning Agent (Member 2 implements QLearningAgent)
+    # ------------------------------------------------------------------
+    print("\n[1/4] Training Q-Learning Agent...")
+    ql_agent = QLearningAgent(n_states, n_actions)
+    ql_rewards = ql_agent.train(env, config.N_EPISODES)
+    print(f"      Training complete. Final avg reward: "
+          f"{np.mean(ql_rewards[-100:]):.2f}")
+
+    # ------------------------------------------------------------------
+    # Train SARSA Agent (Member 3 implements SARSAAgent)
+    # ------------------------------------------------------------------
+    print("\n[2/4] Training SARSA Agent...")
+    sarsa_agent = SARSAAgent(n_states, n_actions)
+    sarsa_rewards = sarsa_agent.train(env, config.N_EPISODES)
+    print(f"      Training complete. Final avg reward: "
+          f"{np.mean(sarsa_rewards[-100:]):.2f}")
+
+    # ------------------------------------------------------------------
+    # Evaluate both agents
+    # ------------------------------------------------------------------
+    print("\n[3/4] Evaluating agents...")
+    ql_eval = ql_agent.evaluate(env, config.TEST_EPISODES)
+    sarsa_eval = sarsa_agent.evaluate(env, config.TEST_EPISODES)
+    print_results_table(ql_eval, sarsa_eval)
+
+    # ------------------------------------------------------------------
+    # Plot results
+    # ------------------------------------------------------------------
+    print("\n[4/4] Generating plots...")
+    plot_learning_curves(ql_rewards, sarsa_rewards)
+    plot_comparison(ql_rewards, sarsa_rewards)
+
+    print("\nDone! All results saved to results/plots/")
