@@ -2,7 +2,7 @@
 # tests/test_environment.py
 #
 # Unit tests for the Inventory RL Environment
-# Author: Member 1
+# Author: Member 1- Pratheesha
 #
 # Run with: python tests/test_environment.py
 # =============================================================================
@@ -154,6 +154,25 @@ def test_get_state_space_info():
     print("[PASS] test_get_state_space_info")
 
 
+def test_reward_penalised_for_overstocking():
+    """Test that reward decreases due to storage costs when keeping excess stock."""
+    env = InventoryEnvironment()
+    
+    # Sell 10, leave 0 in storage, 0 unmet
+    reward_perfect_stock = env._calculate_reward(units_sold=10, leftover_stock=0, unmet_demand=0)
+    
+    # Sell 10, but leave 50 units sitting in the back room
+    reward_overstocked = env._calculate_reward(units_sold=10, leftover_stock=50, unmet_demand=0)
+    
+    assert reward_overstocked < reward_perfect_stock, \
+        "Reward should be lower when storage costs are incurred"
+        
+    print("[PASS] test_reward_penalised_for_overstocking")
+
+
+
+
+
 # =============================================================================
 # Run all tests
 # =============================================================================
@@ -171,7 +190,7 @@ if __name__ == '__main__':
     test_reward_penalised_for_stockout()
     test_full_episode_runs_without_error()
     test_get_state_space_info()
-
+    test_reward_penalised_for_overstocking()
     print("=" * 50)
     print("All tests passed!")
     print("=" * 50)
