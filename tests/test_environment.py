@@ -170,7 +170,27 @@ def test_reward_penalised_for_overstocking():
     print("[PASS] test_reward_penalised_for_overstocking")
 
 
-
+def test_order_action_increases_stock():
+    """Test that taking an order action actually increases the stock before sales."""
+    env = InventoryEnvironment()
+    env.reset()
+    
+    initial_stock = env.current_stock # Should be 50
+    
+    # Look at the demand for day 0 so we can reverse-engineer the math
+    demand_day_0 = int(env.data.iloc[0]['Units Sold'])
+    
+    # Take Action 2 (Order 20 units)
+    _, _, _, info = env.step(2) 
+    
+    # Expected stock: Initial (50) + Ordered (20) - Sold (capped at demand)
+    units_sold = min(70, demand_day_0)
+    expected_stock_after = 70 - units_sold
+    
+    assert info['stock_after'] == expected_stock_after, \
+        f"Order logic failed. Expected {expected_stock_after}, got {info['stock_after']}"
+        
+    print("[PASS] test_order_action_increases_stock")
 
 
 # =============================================================================
@@ -191,6 +211,7 @@ if __name__ == '__main__':
     test_full_episode_runs_without_error()
     test_get_state_space_info()
     test_reward_penalised_for_overstocking()
+    test_order_action_increases_stock()
     print("=" * 50)
     print("All tests passed!")
     print("=" * 50)
