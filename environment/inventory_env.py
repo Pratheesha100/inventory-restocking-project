@@ -2,7 +2,7 @@
 # environment/inventory_env.py
 #
 # Reinforcement Learning Environment for Inventory Restocking
-# Author: Member 1
+# Author: Pratheesha (Member 1)
 #
 # This class simulates a retail store inventory system.
 # An RL agent interacts with this environment by choosing how many units
