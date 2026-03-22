@@ -75,8 +75,10 @@ docs/_build/
 .pybuilder/
 target/
 
-# Jupyter Notebook
-.ipynb_checkpoints
+# Anaconda and Jupyter auto-generated folders
+anaconda_projects/
+.anaconda_project/
+.ipynb_checkpoints/
 
 # IPython
 profile_default/
