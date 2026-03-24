@@ -136,6 +136,9 @@ class SARSAAgent:
             self.decay_epsilon()
             rewards_history.append(total_reward)
 
+            if (episode + 1) % 500 == 0:
+                print(f"      ... completed {episode + 1}/{n_episodes} episodes")
+
         return rewards_history
 
     def evaluate(self, env, n_episodes):
