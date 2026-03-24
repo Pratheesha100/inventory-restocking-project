@@ -51,8 +51,8 @@ inventory-rl-project/
 | Members | Role | Responsibilities |
 |--------|------|-----------------|
 | Pratheesha Silva | Environment & Data Engineer | Data preprocessing, RL environment, shared infrastructure |
-| Member 2 (Name) | Q-Learning Specialist | Q-Learning implementation, tuning, results |
-| Member 3 (Name) | SARSA Specialist | SARSA implementation, tuning, comparative analysis |
+| Aweesha Wijesundara | Q-Learning Specialist | Q-Learning implementation, tuning, results |
+| Dinitha Fernando | SARSA Specialist | SARSA implementation, tuning, comparative analysis |
 
 ## Setup Instructions
 
