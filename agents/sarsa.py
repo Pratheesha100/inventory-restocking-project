@@ -15,7 +15,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
 
-class SarsaAgent:
+class SARSAAgent:
     """
     SARSA Agent for the Inventory Optimization Problem.
     """
@@ -89,3 +89,106 @@ class SarsaAgent:
         """
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+
+    def train(self, env, n_episodes):
+        """
+        Trains the agent by interacting with the environment over many episodes.
+
+        Returns:
+        --------
+        rewards_history : list
+            Total reward accumulated in each episode.
+        """
+        rewards_history = []
+
+        for episode in range(n_episodes):
+            state = env.reset()
+            state_idx = env.state_to_index(state)
+
+            # SARSA DIFFERENCE: We must choose the first action BEFORE the loop starts
+            action_idx = self.choose_action(state_idx)
+
+            total_reward = 0
+            done = False
+
+            while not done:
+                # 1. Take the action in the environment
+                next_state, reward, done, info = env.step(action_idx)
+                next_state_idx = env.state_to_index(next_state)
+
+                # 2. Choose the NEXT action based on the NEXT state (On-policy)
+                if not done:
+                    next_action_idx = self.choose_action(next_state_idx)
+                else:
+                    next_action_idx = None  # Doesn't matter if the episode is done
+
+                # 3. Update the Q-table using the SARSA rule
+                self.update(
+                    state_idx, action_idx, reward, next_state_idx, next_action_idx
+                )
+
+                # 4. Transition to the next timestep
+                state_idx = next_state_idx
+                action_idx = next_action_idx
+                total_reward += reward
+
+            # Decay exploration rate at the end of the episode
+            self.decay_epsilon()
+            rewards_history.append(total_reward)
+
+        return rewards_history
+
+    def evaluate(self, env, n_episodes):
+        """
+        Evaluates the trained agent by running it with ZERO exploration (pure exploitation).
+        Calculates metrics required by main.py for the report.
+        """
+        # Temporarily turn off exploration
+        original_epsilon = self.epsilon
+        self.epsilon = 0.0
+
+        total_rewards = []
+        total_days = 0
+        stockout_days = 0
+        overstock_days = 0
+
+        for _ in range(n_episodes):
+            state = env.reset()
+            state_idx = env.state_to_index(state)
+            action_idx = self.choose_action(state_idx)
+
+            episode_reward = 0
+            done = False
+
+            while not done:
+                next_state, reward, done, info = env.step(action_idx)
+                next_state_idx = env.state_to_index(next_state)
+
+                if not done:
+                    next_action_idx = self.choose_action(next_state_idx)
+
+                state_idx = next_state_idx
+                action_idx = next_action_idx
+
+                episode_reward += reward
+                total_days += 1
+
+                # Track metrics for the evaluation table
+                if info["unmet_demand"] > 0:
+                    stockout_days += 1
+                if (
+                    info["stock_after"] >= env.max_stock * 0.9
+                ):  # >90% capacity is overstock
+                    overstock_days += 1
+
+            total_rewards.append(episode_reward)
+
+        # Restore the original exploration rate
+        self.epsilon = original_epsilon
+
+        # Return the exact dictionary format main.py expects
+        return {
+            "avg_reward": np.mean(total_rewards),
+            "stockout_rate": (stockout_days / total_days) * 100,
+            "overstock_rate": (overstock_days / total_days) * 100,
+        }
