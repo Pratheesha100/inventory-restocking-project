@@ -58,8 +58,8 @@ QL_EPSILON_DECAY = 0.995  # Decay rate per episode
 # =============================================================================
 # SARSA HYPERPARAMETERS (Member 3)
 # =============================================================================
-SARSA_ALPHA = 0.5  # Learning rate (same as Q-Learning for fair comparison)
-SARSA_GAMMA = 0.99  # Discount factor (same as Q-Learning)
+SARSA_ALPHA = 0.1  # Learning rate (same as Q-Learning for fair comparison)
+SARSA_GAMMA = 0.5  # Discount factor (same as Q-Learning)
 SARSA_EPSILON_START = 1.0  # Starting exploration rate
 SARSA_EPSILON_END = 0.01  # Minimum exploration rate
 SARSA_EPSILON_DECAY = 0.995  # Decay rate per episode
