@@ -1,5 +1,1 @@
-# =============================================================================
-# tests/test_sarsa.py
-# Author: Member 3
-# Write unit tests for your SARSAAgent here.
-# =============================================================================
+"""Unit tests for SARSA agent."""
