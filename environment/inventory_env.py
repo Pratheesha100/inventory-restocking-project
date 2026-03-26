@@ -8,9 +8,6 @@
 # An RL agent interacts with this environment by choosing how many units
 # to order each day, and receives a reward based on profit, storage costs,
 # and stockout penalties.
-#
-# Compatible with Q-Learning (agents/q_learning.py)
-# Compatible with SARSA     (agents/sarsa.py)
 # =============================================================================
 
 import numpy as np
@@ -68,13 +65,12 @@ class InventoryEnvironment:
 
         # -------------------------------------------------------
         # Action Space
-        # -------------------------------------------------------
         self.action_space = config.ACTION_SPACE      # [0, 10, 20]
         self.n_actions = len(self.action_space)      # 3
 
         # -------------------------------------------------------
+
         # State Space Dimensions
-        # -------------------------------------------------------
         self.n_stock_bins = config.STOCK_BINS        # 3
         self.n_days = 7                              # Monday–Sunday
         self.n_promo = 2                             # 0 or 1
@@ -83,21 +79,21 @@ class InventoryEnvironment:
         self.n_states = self.n_stock_bins * self.n_days * self.n_promo
 
         # -------------------------------------------------------
+
         # Environment Limits
-        # -------------------------------------------------------
         self.max_stock = config.MAX_STOCK_CAPACITY   # 100 units max
         self.initial_stock = config.INITIAL_STOCK    # Start with 50 units
 
         # -------------------------------------------------------
+
         # Reward Function Parameters
-        # -------------------------------------------------------
         self.profit_per_unit = config.PROFIT_PER_UNIT               # $5.0
         self.storage_cost_per_unit = config.STORAGE_COST_PER_UNIT   # $1.0
         self.shortage_penalty = config.SHORTAGE_PENALTY_PER_UNIT    # $3.0
 
         # -------------------------------------------------------
+
         # Internal State Tracking
-        # -------------------------------------------------------
         self.current_stock = self.initial_stock
         self.current_step = 0
         self.max_steps = len(self.data)
@@ -110,6 +106,8 @@ class InventoryEnvironment:
 
     # =========================================================================
     # PUBLIC METHODS (used by Q-Learning and SARSA agents)
+    # reset() and step() are the core methods that agents will interact with.
+    # state_to_index() is a helper for converting state tuples to Q-table indices.
     # =========================================================================
 
     def reset(self):
@@ -163,64 +161,47 @@ class InventoryEnvironment:
 
         # -------------------------------------------------------
         # Step 1: Convert action index to order quantity
-        # -------------------------------------------------------
         order_qty = self.action_space[action_index]
 
-        # -------------------------------------------------------
         # Step 2: Add ordered stock (capped at max capacity)
-        # -------------------------------------------------------
         self.current_stock = min(
             self.current_stock + order_qty,
             self.max_stock
         )
 
-        # -------------------------------------------------------
         # Step 3: Get today's demand from the dataset
-        # -------------------------------------------------------
         row = self.data.iloc[self.current_step]
         demand = int(row['Units Sold'])
 
-        # -------------------------------------------------------
         # Step 4: Calculate sales and unmet demand
-        # -------------------------------------------------------
         # Can't sell more than what's in stock
         units_sold = min(self.current_stock, demand)
 
         # Demand that couldn't be fulfilled (stockout)
         unmet_demand = max(0, demand - self.current_stock)
 
-        # -------------------------------------------------------
         # Step 5: Update stock after today's sales
-        # -------------------------------------------------------
         self.current_stock = self.current_stock - units_sold
 
-        # -------------------------------------------------------
         # Step 6: Calculate today's reward
-        # -------------------------------------------------------
         reward = self._calculate_reward(
             units_sold,
             self.current_stock,
             unmet_demand
         )
 
-        # -------------------------------------------------------
         # Step 7: Advance timestep and check if episode is over
-        # -------------------------------------------------------
         self.current_step += 1
         self.done = self.current_step >= self.max_steps - 1
 
-        # -------------------------------------------------------
         # Step 8: Get next state (or None if episode ended)
-        # -------------------------------------------------------
         if not self.done:
             next_row = self.data.iloc[self.current_step]
             next_state = self._get_state(self.current_stock, next_row)
         else:
             next_state = None
 
-        # -------------------------------------------------------
         # Step 9: Build info dictionary for diagnostics
-        # -------------------------------------------------------
         info = {
             'day': self.current_step,
             'order_qty': order_qty,
@@ -292,6 +273,8 @@ class InventoryEnvironment:
 
     # =========================================================================
     # PRIVATE METHODS (internal helpers, not called by agents directly)
+    # _get_state() and _calculate_reward() are the core internal methods that
+    # handle state representation and reward calculation logic.
     # =========================================================================
 
     def _get_state(self, stock_level, row):
