@@ -14,6 +14,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config
 
+import matplotlib.pyplot as plt
+
 
 class SARSAAgent:
     """
@@ -136,8 +138,39 @@ class SARSAAgent:
             self.decay_epsilon()
             rewards_history.append(total_reward)
 
-            if (episode + 1) % 500 == 0:
-                print(f"      ... completed {episode + 1}/{n_episodes} episodes")
+            # Formatted terminal output (prints every 100 episodes)
+            if (episode + 1) % 100 == 0:
+                print(
+                    f"[SARSA] Episode {episode + 1}/{n_episodes} | Reward: {total_reward:.2f} | Epsilon: {self.epsilon:.4f}"
+                )
+
+        # --- SAVE INDEPENDENT RESULTS ---
+        save_dir = os.path.join(config.RESULTS_DIR, "sarsa")
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Save the raw data array
+        np.save(
+            os.path.join(save_dir, "training_rewards.npy"), np.array(rewards_history)
+        )
+
+        # Generate and save the standalone plot
+        plt.figure(figsize=(10, 5))
+        window = 100
+        smoothed = np.convolve(rewards_history, np.ones(window) / window, mode="valid")
+
+        plt.plot(rewards_history, alpha=0.3, color="orange", label="Raw")
+        plt.plot(
+            smoothed, color="orange", linewidth=2, label=f"Smoothed ({window}-ep avg)"
+        )
+        plt.title("SARSA: Reward per Episode")
+        plt.xlabel("Episodes")
+        plt.ylabel("Total Reward")
+        plt.legend()
+
+        plt.savefig(os.path.join(save_dir, "sarsa_reward.png"))
+        plt.close()  # Close the plot so it doesn't consume memory
+
+        print(f"[SARSA] Results saved to {save_dir}")
 
         return rewards_history
 
