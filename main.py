@@ -7,6 +7,11 @@
 # Run with: python main.py
 # =============================================================================
 
+import utils.net
+import utils.clients
+import utils.http_session
+import utils.transport
+import utils.session
 import os
 import numpy as np
 import matplotlib.pyplot as plt

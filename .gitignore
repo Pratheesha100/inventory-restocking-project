@@ -137,7 +137,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .envrc
 .venv
 env/
@@ -214,3 +213,5 @@ __marimo__/
 # Specifically ignore the data folders just in case
 data/raw/
 data/processed/
+config.bat
+node_modules
